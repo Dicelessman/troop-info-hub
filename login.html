@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Scout App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'scout-green': '#2D5016',
+                        'scout-blue': '#1E40AF',
+                        'scout-orange': '#EA580C'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-green-50 min-h-screen">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+            <div class="text-center mb-8">
+                <button onclick="goBack()" class="absolute top-4 left-4 bg-gray-100 rounded-full p-2 hover:bg-gray-200 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <h1 class="text-3xl font-bold text-scout-green mb-2">Accedi</h1>
+                <p class="text-gray-600">Inserisci le tue credenziali</p>
+            </div>
+
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="email" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-scout-green focus:border-transparent transition-all duration-200">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="password" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-scout-green focus:border-transparent transition-all duration-200">
+                </div>
+                <button type="submit" class="w-full bg-scout-green text-white py-3 px-6 rounded-xl font-semibold hover:bg-green-700 transition-colors duration-200 transform hover:scale-105">
+                    Accedi
+                </button>
+            </form>
+
+            <div class="text-center mt-6">
+                <p class="text-gray-600">Non hai un account? 
+                    <a href="register.html" class="text-scout-blue font-semibold hover:underline">Registrati</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast per errori -->
+    <div id="errorToast" class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg transform translate-x-full transition-transform duration-300 z-50">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
+            <span id="errorMessage"></span>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            // Inserisci qui la tua configurazione Firebase
+            apiKey: "your-api-key",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "your-app-id"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Controlla se l'utente è già loggato
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                
+                // Verifica i permessi dell'utente
+                const userDoc = await getDoc(doc(db, 'utenti', user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    if (userData.ruolo === 'staff' && !userData.approvato) {
+                        showError('Account staff in attesa di approvazione');
+                        await auth.signOut();
+                        return;
+                    }
+                }
+                
+                // Redirect alla dashboard
+                window.location.href = 'dashboard.html';
+            } catch (error) {
+                let errorMessage = 'Errore durante il login';
+                
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'Utente non trovato';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Password errata';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Email non valida';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Troppi tentativi, riprova più tardi';
+                        break;
+                }
+                
+                showError(errorMessage);
+            }
+        });
+
+        function showError(message) {
+            const toast = document.getElementById('errorToast');
+            const messageEl = document.getElementById('errorMessage');
+            messageEl.textContent = message;
+            
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        window.goBack = () => {
+            window.location.href = 'index.html';
+        };
+    </script>
+</body>
+</html>

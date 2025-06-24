@@ -1,0 +1,328 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Scout App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'scout-green': '#2D5016',
+                        'scout-blue': '#1E40AF',
+                        'scout-orange': '#EA580C'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="bg-scout-green rounded-lg w-10 h-10 flex items-center justify-center mr-3">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2L3 7v11h4v-6h6v6h4V7l-7-5z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-900">Dashboard</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="userInfo" class="text-sm text-gray-600"></span>
+                    <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div class="flex items-center">
+                    <div class="bg-scout-green rounded-lg p-3">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Esploratori</p>
+                        <p id="esploratoriCount" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div class="flex items-center">
+                    <div class="bg-scout-blue rounded-lg p-3">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Staff</p>
+                        <p id="staffCount" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div class="flex items-center">
+                    <div class="bg-scout-orange rounded-lg p-3">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M12 9v3.75h-9v-3.75h9zm0-2.25h-9v-3.75h9v3.75zm2.25-3.75v9h-2.25v-9h2.25z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">In Attesa</p>
+                        <p id="pendingCount" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4 sm:mb-0">Gestione Utenti</h2>
+                    <div class="flex space-x-3">
+                        <input type="text" id="searchInput" placeholder="Cerca utenti..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-green focus:border-transparent">
+                        <select id="roleFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-scout-green focus:border-transparent">
+                            <option value="">Tutti i ruoli</option>
+                            <option value="esploratore">Esploratori</option>
+                            <option value="staff">Staff</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utente</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ruolo</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Utenti saranno caricati dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading -->
+    <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 flex items-center space-x-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-scout-green"></div>
+            <span class="text-lg font-medium">Caricamento...</span>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, getDocs, doc, updateDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            // Inserisci qui la tua configurazione Firebase
+            apiKey: "your-api-key",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "your-app-id"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let allUsers = [];
+
+        // Verifica autenticazione
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Verifica i permessi dell'utente
+                const userDoc = await getDoc(doc(db, 'utenti', user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    currentUser = userData;
+                    
+                    if (userData.ruolo === 'staff' && !userData.approvato) {
+                        alert('Account in attesa di approvazione');
+                        await signOut(auth);
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    
+                    document.getElementById('userInfo').textContent = `${userData.nome} ${userData.cognome} (${userData.ruolo})`;
+                    await loadUsers();
+                } else {
+                    window.location.href = 'login.html';
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function loadUsers() {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'utenti'));
+                allUsers = [];
+                
+                querySnapshot.forEach((doc) => {
+                    allUsers.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                updateStats();
+                displayUsers(allUsers);
+                document.getElementById('loading').style.display = 'none';
+            } catch (error) {
+                console.error('Errore nel caricamento utenti:', error);
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function updateStats() {
+            const esploratori = allUsers.filter(u => u.ruolo === 'esploratore').length;
+            const staff = allUsers.filter(u => u.ruolo === 'staff' && u.approvato).length;
+            const pending = allUsers.filter(u => u.ruolo === 'staff' && !u.approvato).length;
+            
+            document.getElementById('esploratoriCount').textContent = esploratori;
+            document.getElementById('staffCount').textContent = staff;
+            document.getElementById('pendingCount').textContent = pending;
+        }
+
+        function displayUsers(users) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-colors';
+                
+                const statusBadge = user.ruolo === 'staff' 
+                    ? (user.approvato 
+                        ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Approvato</span>'
+                        : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">In Attesa</span>')
+                    : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Attivo</span>';
+                
+                const actions = currentUser.ruolo === 'staff' && currentUser.approvato
+                    ? `<div class="flex space-x-2">
+                        <button onclick="viewProfile('${user.id}')" class="bg-scout-blue text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-colors">
+                            Visualizza
+                        </button>
+                        ${user.ruolo === 'staff' && !user.approvato 
+                            ? `<button onclick="approveUser('${user.id}')" class="bg-green-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-600 transition-colors">
+                                Approva
+                               </button>`
+                            : ''
+                        }
+                       </div>`
+                    : user.id === auth.currentUser?.uid
+                        ? `<button onclick="viewProfile('${user.id}')" class="bg-scout-blue text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-colors">
+                            La mia scheda
+                           </button>`
+                        : '';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div class="h-10 w-10 rounded-full bg-scout-green flex items-center justify-center">
+                                    <span class="text-white font-medium text-sm">${user.nome.charAt(0)}${user.cognome.charAt(0)}</span>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${user.nome} ${user.cognome}</div>
+                                <div class="text-sm text-gray-500">${user.email}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.ruolo === 'staff' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">
+                            ${user.ruolo}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        ${statusBadge}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        ${actions}
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        // Filtri e ricerca
+        document.getElementById('searchInput').addEventListener('input', filterUsers);
+        document.getElementById('roleFilter').addEventListener('change', filterUsers);
+
+        function filterUsers() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const roleFilter = document.getElementById('roleFilter').value;
+            
+            let filteredUsers = allUsers;
+            
+            if (searchTerm) {
+                filteredUsers = filteredUsers.filter(user => 
+                    user.nome.toLowerCase().includes(searchTerm) ||
+                    user.cognome.toLowerCase().includes(searchTerm) ||
+                    user.email.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (roleFilter) {
+                filteredUsers = filteredUsers.filter(user => user.ruolo === roleFilter);
+            }
+            
+            displayUsers(filteredUsers);
+        }
+
+        window.approveUser = async (userId) => {
+            try {
+                await updateDoc(doc(db, 'utenti', userId), {
+                    approvato: true
+                });
+                await loadUsers();
+            } catch (error) {
+                console.error('Errore nell\'approvazione:', error);
+                alert('Errore nell\'approvazione dell\'utente');
+            }
+        };
+
+        window.viewProfile = (userId) => {
+            window.location.href = `scheda.html?id=${userId}`;
+        };
+
+        window.logout = async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Errore nel logout:', error);
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,24 +1,79 @@
+
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>troop-info-hub</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scout App - Gestione Reparto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'scout-green': '#2D5016',
+                        'scout-blue': '#1E40AF',
+                        'scout-orange': '#EA580C'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-green-50 min-h-screen">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform hover:scale-105 transition-transform duration-300">
+            <div class="text-center mb-8">
+                <div class="bg-scout-green rounded-full w-20 h-20 mx-auto flex items-center justify-center mb-4">
+                    <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2L3 7v11h4v-6h6v6h4V7l-7-5z"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-scout-green mb-2">Scout App</h1>
+                <p class="text-gray-600">Gestione Reparto</p>
+            </div>
+            <div class="space-y-4">
+                <button onclick="redirectToLogin()" class="w-full bg-scout-green text-white py-3 px-6 rounded-xl font-semibold hover:bg-green-700 transition-colors duration-200 transform hover:scale-105">
+                    Accedi
+                </button>
+                <button onclick="redirectToRegister()" class="w-full bg-scout-blue text-white py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition-colors duration-200 transform hover:scale-105">
+                    Registrati
+                </button>
+            </div>
+        </div>
+    </div>
 
-    <meta property="og:title" content="troop-info-hub" />
-    <meta property="og:description" content="Lovable Generated Project" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-  </head>
+        const firebaseConfig = {
+            // Inserisci qui la tua configurazione Firebase
+            apiKey: "your-api-key",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "your-app-id"
+        };
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Controlla se l'utente è già loggato
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        window.redirectToLogin = () => {
+            window.location.href = 'login.html';
+        };
+
+        window.redirectToRegister = () => {
+            window.location.href = 'register.html';
+        };
+    </script>
+</body>
 </html>

@@ -157,7 +157,7 @@ const ProgressioneSection: React.FC<ProgressioneSectionProps> = ({
                 <div className="space-y-4 ml-4">
                   {direction.challenges.map((challenge) => {
                     const challengePath = `tracce.${track.number}.sfide.${challenge.id}`;
-                    const challengeData = localData.tracce?.[track.number]?.sfide?.[challenge.id] || {};
+                    const challengeData = localData.tracce?.[track.number]?.sfide?.[challenge.id] || { completata: false, data: '' };
                     
                     return (
                       <div key={challenge.id} className="border-l-2 border-gray-200 pl-4">

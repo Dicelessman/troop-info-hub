@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { ArrowLeft, User, Heart, Trophy, Calendar, CheckSquare, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProgressioneSection from '@/components/ProgressioneSection';
 
 interface ProfileData {
   id: string;
@@ -370,69 +371,11 @@ const ProfilePage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="progressione" className="mt-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center mb-6">
-                <Trophy className="w-5 h-5 text-yellow-500 mr-2" />
-                <h3 className="text-lg font-semibold">Progressione Personale</h3>
-              </div>
-              
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Data Promessa</label>
-                    <input
-                      type="date"
-                      value={profileData.datiScheda.progressione?.promessa?.data || ''}
-                      disabled={!isEditing}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-50"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">VCP Completato</label>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={profileData.datiScheda.progressione?.vcp?.completato || false}
-                        disabled={!isEditing}
-                        className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded disabled:opacity-50"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Completato</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-4">Tracce di Competenza</h4>
-                  <div className="space-y-4">
-                    {['primaTraccia', 'secondaTraccia', 'terzaTraccia'].map((traccia, index) => (
-                      <div key={traccia} className="border border-gray-200 rounded-lg p-4">
-                        <h5 className="font-medium text-gray-900 mb-2">{`${index + 1}ª Traccia`}</h5>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
-                            <input
-                              type="date"
-                              value={profileData.datiScheda.progressione?.[traccia]?.data || ''}
-                              disabled={!isEditing}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-50"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Sfida</label>
-                            <input
-                              type="text"
-                              value={profileData.datiScheda.progressione?.[traccia]?.sfida || ''}
-                              disabled={!isEditing}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-50"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ProgressioneSection
+              data={profileData.datiScheda.progressione || {}}
+              isEditing={isEditing}
+              onSave={(data) => handleSave(data, 'progressione')}
+            />
           </TabsContent>
 
           <TabsContent value="specialita" className="mt-6">

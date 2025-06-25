@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -31,7 +30,7 @@
                             <path d="M10 2L3 7v11h4v-6h6v6h4V7l-7-5z"/>
                         </svg>
                     </div>
-                    <h1 class="text-xl font-bold text-gray-900">Dashboard</h1>
+                    <h1 class="text-xl font-bold text-gray-900">Dashboard Staff</h1>
                 </div>
                 <div class="flex items-center space-x-4">
                     <span id="userInfo" class="text-sm text-gray-600"></span>
@@ -88,12 +87,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Debug Info -->
-        <div id="debugInfo" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6" style="display: none;">
-            <h3 class="text-sm font-medium text-yellow-800 mb-2">Debug Info:</h3>
-            <div id="debugContent" class="text-sm text-yellow-700"></div>
         </div>
 
         <!-- Users Table -->
@@ -163,64 +156,43 @@
         let currentUser = null;
         let allUsers = [];
 
-        function debugLog(message, data = '') {
-            console.log(`[DEBUG] ${message}`, data);
-            const debugDiv = document.getElementById('debugInfo');
-            const debugContent = document.getElementById('debugContent');
-            debugDiv.style.display = 'block';
-            debugContent.innerHTML += `<br>${message}: ${JSON.stringify(data)}`;
-        }
-
-        // Verifica autenticazione
+        // Verifica autenticazione e permessi staff
         onAuthStateChanged(auth, async (user) => {
-            debugLog('Auth state changed', user ? { uid: user.uid, email: user.email } : 'No user');
-            
             if (user) {
                 try {
-                    // Verifica i permessi dell'utente
                     const userDocRef = doc(db, 'utenti', user.uid);
                     const userDoc = await getDoc(userDocRef);
-                    
-                    debugLog('User document exists', userDoc.exists());
                     
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
                         currentUser = { id: user.uid, ...userData };
                         
-                        debugLog('Current user data', currentUser);
-                        
-                        if (userData.ruolo === 'staff' && !userData.approvato) {
-                            alert('Account in attesa di approvazione');
+                        // Verifica che sia staff approvato
+                        if (userData.ruolo !== 'staff' || !userData.approvato) {
+                            alert('Accesso non autorizzato. Solo lo staff approvato può accedere a questa pagina.');
                             await signOut(auth);
-                            window.location.href = 'login.html';
+                            window.location.href = 'index.html';
                             return;
                         }
                         
-                        document.getElementById('userInfo').textContent = `${userData.nome} ${userData.cognome} (${userData.ruolo})`;
+                        document.getElementById('userInfo').textContent = `${userData.nome} ${userData.cognome} (Staff)`;
                         await loadUsers();
                     } else {
-                        debugLog('User document not found, redirecting to login');
                         window.location.href = 'login.html';
                     }
                 } catch (error) {
-                    debugLog('Error loading user data', error.message);
                     console.error('Errore nel caricamento dati utente:', error);
                     window.location.href = 'login.html';
                 }
             } else {
-                debugLog('No user authenticated, redirecting to login');
                 window.location.href = 'login.html';
             }
         });
 
         async function loadUsers() {
-            debugLog('Starting to load users');
-            
             try {
                 const usersCollection = collection(db, 'utenti');
                 const querySnapshot = await getDocs(usersCollection);
-                
-                debugLog('Query snapshot size', querySnapshot.size);
                 
                 allUsers = [];
                 
@@ -230,21 +202,16 @@
                         id: doc.id,
                         ...userData
                     });
-                    debugLog('Added user', { id: doc.id, nome: userData.nome, ruolo: userData.ruolo });
                 });
-                
-                debugLog('Total users loaded', allUsers.length);
                 
                 updateStats();
                 displayUsers(allUsers);
                 document.getElementById('loading').style.display = 'none';
                 
             } catch (error) {
-                debugLog('Error loading users', error.message);
                 console.error('Errore nel caricamento utenti:', error);
                 document.getElementById('loading').style.display = 'none';
                 
-                // Mostra messaggio di errore nella tabella
                 const tbody = document.getElementById('usersTableBody');
                 tbody.innerHTML = `
                     <tr>
@@ -264,13 +231,9 @@
             document.getElementById('esploratoriCount').textContent = esploratori;
             document.getElementById('staffCount').textContent = staff;
             document.getElementById('pendingCount').textContent = pending;
-            
-            debugLog('Stats updated', { esploratori, staff, pending });
         }
 
         function displayUsers(users) {
-            debugLog('Displaying users', users.length);
-            
             const tbody = document.getElementById('usersTableBody');
             tbody.innerHTML = '';
             
@@ -295,23 +258,17 @@
                         : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">In Attesa</span>')
                     : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Attivo</span>';
                 
-                const actions = currentUser && currentUser.ruolo === 'staff' && currentUser.approvato
-                    ? `<div class="flex space-x-2">
-                        <button onclick="viewProfile('${user.id}')" class="bg-scout-blue text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-colors">
-                            Visualizza
-                        </button>
-                        ${user.ruolo === 'staff' && !user.approvato 
-                            ? `<button onclick="approveUser('${user.id}')" class="bg-green-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-600 transition-colors">
-                                Approva
-                               </button>`
-                            : ''
-                        }
-                       </div>`
-                    : user.id === auth.currentUser?.uid
-                        ? `<button onclick="viewProfile('${user.id}')" class="bg-scout-blue text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-colors">
-                            La mia scheda
+                const actions = `<div class="flex space-x-2">
+                    <button onclick="viewProfile('${user.id}')" class="bg-scout-blue text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-colors">
+                        Visualizza
+                    </button>
+                    ${user.ruolo === 'staff' && !user.approvato 
+                        ? `<button onclick="approveUser('${user.id}')" class="bg-green-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-600 transition-colors">
+                            Approva
                            </button>`
-                        : 'Nessuna azione disponibile';
+                        : ''
+                    }
+                   </div>`;
                 
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -344,7 +301,6 @@
             });
         }
 
-        // Filtri e ricerca
         document.getElementById('searchInput').addEventListener('input', filterUsers);
         document.getElementById('roleFilter').addEventListener('change', filterUsers);
 
@@ -374,17 +330,14 @@
                 await updateDoc(doc(db, 'utenti', userId), {
                     approvato: true
                 });
-                debugLog('User approved', userId);
                 await loadUsers();
             } catch (error) {
-                debugLog('Error approving user', error.message);
                 console.error('Errore nell\'approvazione:', error);
                 alert('Errore nell\'approvazione dell\'utente');
             }
         };
 
         window.viewProfile = (userId) => {
-            debugLog('Viewing profile', userId);
             window.location.href = `scheda.html?id=${userId}`;
         };
 

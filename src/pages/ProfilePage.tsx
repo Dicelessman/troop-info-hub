@@ -26,7 +26,7 @@ interface ProfileData {
 }
 
 const ProfilePage: React.FC = () => {
-  const { userData } = useAuth();
+  const { userData, user } = useAuth();
   const { userId } = useParams();
   const navigate = useNavigate();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -43,7 +43,9 @@ const ProfilePage: React.FC = () => {
     userDataApprovato: userData?.approvato,
     canEdit,
     targetUserId,
-    isOwnProfile
+    isOwnProfile,
+    currentUser: user?.uid,
+    isAuthenticated: !!user
   });
 
   useEffect(() => {
@@ -54,27 +56,80 @@ const ProfilePage: React.FC = () => {
 
   const loadProfile = async () => {
     try {
-      if (!targetUserId) return;
+      if (!targetUserId) {
+        console.error('No target user ID available');
+        return;
+      }
+
+      if (!user) {
+        console.error('User not authenticated');
+        toast({
+          title: "Errore",
+          description: "Utente non autenticato",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log('Loading profile for user:', targetUserId, 'Current user:', user.uid);
       
       const userDoc = await getDoc(doc(db, 'utenti', targetUserId));
       if (userDoc.exists()) {
         const data = userDoc.data();
+        console.log('Profile data loaded successfully:', {
+          nome: data.nome,
+          cognome: data.cognome,
+          ruolo: data.ruolo,
+          hasProgressione: !!data.datiScheda?.progressione
+        });
+        
         setProfileData({
           id: targetUserId,
           nome: data.nome || '',
           cognome: data.cognome || '',
           email: data.email || '',
           ruolo: data.ruolo || '',
-          datiScheda: data.datiScheda || {}
+          datiScheda: data.datiScheda || {
+            contatti: {},
+            sanitarie: {},
+            progressione: {},
+            specialita: [],
+            eventi: {},
+            presenze: {},
+            documenti: {}
+          }
+        });
+      } else {
+        console.error('User document does not exist');
+        toast({
+          title: "Errore",
+          description: "Profilo utente non trovato",
+          variant: "destructive",
         });
       }
     } catch (error) {
       console.error('Error loading profile:', error);
-      toast({
-        title: "Errore",
-        description: "Errore nel caricamento del profilo",
-        variant: "destructive",
+      console.error('Error details:', {
+        code: (error as any)?.code,
+        message: (error as any)?.message,
+        targetUserId,
+        currentUser: user?.uid,
+        isAuthenticated: !!user
       });
+      
+      if ((error as any)?.code === 'permission-denied') {
+        toast({
+          title: "Errore di Autorizzazione",
+          description: "Non hai i permessi necessari per visualizzare questo profilo. Verifica di essere autenticato correttamente.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Errore",
+          description: "Errore nel caricamento del profilo",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -82,20 +137,35 @@ const ProfilePage: React.FC = () => {
 
   const handleSave = async (sectionData: any, section: string) => {
     try {
-      if (!targetUserId) return;
+      if (!targetUserId) {
+        console.error('No target user ID for save operation');
+        return;
+      }
+
+      if (!user) {
+        console.error('User not authenticated for save operation');
+        toast({
+          title: "Errore",
+          description: "Utente non autenticato",
+          variant: "destructive",
+        });
+        return;
+      }
       
-      console.log('Attempting to save:', { targetUserId, section, sectionData });
-      console.log('Current user permissions:', { 
-        userRole: userData?.ruolo, 
-        userApproved: userData?.approvato,
-        canEdit 
+      console.log('Attempting to save:', { 
+        targetUserId, 
+        section, 
+        currentUser: user.uid,
+        isAuthenticated: !!user,
+        canEdit,
+        sectionDataKeys: Object.keys(sectionData || {})
       });
       
       await updateDoc(doc(db, 'utenti', targetUserId), {
         [`datiScheda.${section}`]: sectionData
       });
       
-      console.log('Save successful');
+      console.log('Save successful for section:', section);
       
       toast({
         title: "Successo",
@@ -105,16 +175,27 @@ const ProfilePage: React.FC = () => {
       await loadProfile();
     } catch (error) {
       console.error('Error saving data:', error);
-      console.error('Error details:', {
+      console.error('Save error details:', {
         code: (error as any)?.code,
-        message: (error as any)?.message
+        message: (error as any)?.message,
+        targetUserId,
+        currentUser: user?.uid,
+        section
       });
       
-      toast({
-        title: "Errore",
-        description: `Errore nel salvataggio dei dati: ${(error as any)?.message || 'Errore sconosciuto'}`,
-        variant: "destructive",
-      });
+      if ((error as any)?.code === 'permission-denied') {
+        toast({
+          title: "Errore di Autorizzazione",
+          description: "Non hai i permessi necessari per modificare questo profilo.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Errore",
+          description: `Errore nel salvataggio dei dati: ${(error as any)?.message || 'Errore sconosciuto'}`,
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -190,6 +271,18 @@ const ProfilePage: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {!user && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <div className="text-yellow-600 mr-3">⚠️</div>
+              <div>
+                <h3 className="text-yellow-800 font-medium">Attenzione</h3>
+                <p className="text-yellow-700 text-sm">Utente non autenticato. Alcune funzionalità potrebbero non essere disponibili.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <Tabs defaultValue="contatti" className="w-full">
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="contatti">Contatti</TabsTrigger>
@@ -371,11 +464,23 @@ const ProfilePage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="progressione" className="mt-6">
-            <ProgressioneSection
-              data={profileData.datiScheda.progressione || {}}
-              isEditing={isEditing}
-              onSave={(data) => handleSave(data, 'progressione')}
-            />
+            {user ? (
+              <ProgressioneSection
+                data={profileData.datiScheda.progressione || {}}
+                isEditing={isEditing}
+                onSave={(data) => handleSave(data, 'progressione')}
+              />
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="text-center py-8">
+                  <div className="text-red-500 mb-4">🔒</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Accesso Richiesto</h3>
+                  <p className="text-gray-600">
+                    È necessario effettuare l'accesso per visualizzare la sezione Progressione Personale.
+                  </p>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="specialita" className="mt-6">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -38,6 +37,14 @@ const ProfilePage: React.FC = () => {
   const canEdit = userData?.ruolo === 'staff' && userData?.approvato;
   const isOwnProfile = !userId || userId === userData?.id;
 
+  console.log('ProfilePage debug:', {
+    userDataRole: userData?.ruolo,
+    userDataApprovato: userData?.approvato,
+    canEdit,
+    targetUserId,
+    isOwnProfile
+  });
+
   useEffect(() => {
     if (targetUserId) {
       loadProfile();
@@ -76,9 +83,18 @@ const ProfilePage: React.FC = () => {
     try {
       if (!targetUserId) return;
       
+      console.log('Attempting to save:', { targetUserId, section, sectionData });
+      console.log('Current user permissions:', { 
+        userRole: userData?.ruolo, 
+        userApproved: userData?.approvato,
+        canEdit 
+      });
+      
       await updateDoc(doc(db, 'utenti', targetUserId), {
         [`datiScheda.${section}`]: sectionData
       });
+      
+      console.log('Save successful');
       
       toast({
         title: "Successo",
@@ -88,9 +104,14 @@ const ProfilePage: React.FC = () => {
       await loadProfile();
     } catch (error) {
       console.error('Error saving data:', error);
+      console.error('Error details:', {
+        code: (error as any)?.code,
+        message: (error as any)?.message
+      });
+      
       toast({
         title: "Errore",
-        description: "Errore nel salvataggio dei dati",
+        description: `Errore nel salvataggio dei dati: ${(error as any)?.message || 'Errore sconosciuto'}`,
         variant: "destructive",
       });
     }
